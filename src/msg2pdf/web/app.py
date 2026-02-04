@@ -429,10 +429,11 @@ async def home():
         }
 
         // Click on upload area - explicitly trigger file input
-        // (label for= doesn't always work with nested elements)
-        uploadArea.addEventListener('click', (e) => {
-            e.preventDefault();
+        uploadArea.addEventListener('click', function(e) {
+            console.log('Upload area clicked, target:', e.target);
+            console.log('fileInput element:', fileInput);
             fileInput.click();
+            console.log('fileInput.click() called');
         });
 
         // Drag and drop - need both dragenter and dragover prevented
