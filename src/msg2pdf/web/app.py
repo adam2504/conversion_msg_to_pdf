@@ -672,10 +672,32 @@ async def convert_single_file(
         )
 
     # Create or reuse session directory
-    if session_id and session_id in jobs:
-        job_id = session_id
-        job_dir = TEMP_DIR / job_id
+    # Check both in-memory dict AND filesystem (in case server restarted)
+    job_dir = None
+    if session_id:
+        # Validate UUID format
+        try:
+            uuid.UUID(session_id)
+            potential_dir = TEMP_DIR / session_id
+            if potential_dir.exists():
+                job_dir = potential_dir
+                job_id = session_id
+        except ValueError:
+            pass  # Invalid UUID, will create new session
+
+    if job_dir:
         output_dir = job_dir / "output"
+        output_dir.mkdir(exist_ok=True)
+
+        # Rebuild job info from disk if not in memory
+        if job_id not in jobs:
+            pdf_files = list(output_dir.glob("*.pdf"))
+            jobs[job_id] = {
+                "created": datetime.now(),
+                "file_count": len(pdf_files),
+                "output_dir": output_dir,
+                "files": [p.name for p in pdf_files],
+            }
 
         # Check file count limit
         if jobs[job_id]["file_count"] >= MAX_FILES_PER_SESSION:
@@ -838,43 +860,32 @@ async def download_result(job_id: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid job ID format")
 
-    if job_id not in jobs:
-        # Check if directory exists (for restarts)
-        job_dir = TEMP_DIR / job_id / "output"
-        if not job_dir.exists():
-            raise HTTPException(status_code=404, detail="Job not found or expired")
+    # Always read from disk to get actual current file list
+    output_dir = TEMP_DIR / job_id / "output"
+    if not output_dir.exists():
+        raise HTTPException(status_code=404, detail="Job not found or expired")
 
-        # Rebuild job info
-        pdf_files = list(job_dir.glob("*.pdf"))
-        if not pdf_files:
-            raise HTTPException(status_code=404, detail="No files found")
+    # Get actual PDF files from disk
+    pdf_files = sorted(output_dir.glob("*.pdf"))
+    if not pdf_files:
+        raise HTTPException(status_code=404, detail="No files found")
 
-        jobs[job_id] = {
-            "created": datetime.now(),
-            "file_count": len(pdf_files),
-            "output_dir": job_dir,
-            "files": [p.name for p in pdf_files],
-        }
+    file_count = len(pdf_files)
+    filenames = [p.name for p in pdf_files]
 
-    job = jobs[job_id]
-    output_dir = job["output_dir"]
-
-    if job["file_count"] == 1:
+    if file_count == 1:
         # Single file - return PDF directly
-        pdf_path = output_dir / job["files"][0]
         return FileResponse(
-            pdf_path,
+            pdf_files[0],
             media_type="application/pdf",
-            filename=job["files"][0],
+            filename=filenames[0],
         )
     else:
-        # Multiple files - create ZIP
+        # Multiple files - always regenerate ZIP to include all files
         zip_path = output_dir.parent / "converted.zip"
-        if not zip_path.exists():
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                for filename in job["files"]:
-                    pdf_path = output_dir / filename
-                    zf.write(pdf_path, filename)
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for pdf_file in pdf_files:
+                zf.write(pdf_file, pdf_file.name)
 
         return FileResponse(
             zip_path,
