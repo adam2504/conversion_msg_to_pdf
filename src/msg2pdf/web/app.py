@@ -637,7 +637,7 @@ async def home():
                 }
             } else {
                 result.className = 'result error';
-                result.innerHTML = '<strong>La conversion a echoue.</strong><br>Veuillez reessayer avec d\'autres fichiers.';
+                result.innerHTML = "<strong>La conversion a echoue.</strong><br>Veuillez reessayer avec d'autres fichiers.";
             }
 
             // Reset for next batch
