@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path, PurePath
 from typing import Annotated
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile, BackgroundTasks
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, BackgroundTasks
 from fastapi.responses import FileResponse, HTMLResponse
 
 from msg2pdf.core.converter import MSGToPDFConverter
@@ -659,7 +659,7 @@ async def home():
 async def convert_single_file(
     background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File(description="MSG file to convert")],
-    session_id: str | None = None,
+    session_id: Annotated[str | None, Form()] = None,
 ):
     """Convert a single MSG file to PDF."""
     # Sanitize filename to prevent path traversal
