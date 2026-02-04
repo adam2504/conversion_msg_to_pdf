@@ -1,0 +1,10 @@
+# Render deployment configuration
+# Deploy with: connect GitHub repo on render.com
+
+services:
+  - type: web
+    name: msg2pdf
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health

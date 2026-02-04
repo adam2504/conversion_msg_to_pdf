@@ -1,0 +1,2 @@
+[console_scripts]
+msg2pdf = msg2pdf.__main__:main

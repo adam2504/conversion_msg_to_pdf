@@ -1,0 +1,1 @@
+from msg2pdf.web.app import app

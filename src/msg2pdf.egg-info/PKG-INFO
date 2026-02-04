@@ -1,0 +1,125 @@
+Metadata-Version: 2.4
+Name: msg2pdf
+Version: 0.1.0
+Summary: Convert Outlook MSG files to PDF
+Author: MSG2PDF Contributors
+License: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: extract-msg>=0.50.0
+Requires-Dist: weasyprint>=60.0
+Requires-Dist: click>=8.1.0
+Requires-Dist: jinja2>=3.1.0
+Requires-Dist: Pillow>=10.0.0
+Provides-Extra: web
+Requires-Dist: fastapi>=0.100.0; extra == "web"
+Requires-Dist: uvicorn>=0.23.0; extra == "web"
+Requires-Dist: python-multipart>=0.0.6; extra == "web"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+
+# MSG to PDF Converter
+
+Convert Outlook `.msg` files to PDF, preserving email content, formatting, and handling attachments.
+
+## Features
+
+- Convert single MSG files or batch process entire directories
+- Preserve email formatting (HTML body rendered to PDF)
+- Extract inline images (embedded in body) and file attachments
+- Concurrent batch processing with configurable workers
+- Cross-platform (macOS, Windows, Linux)
+
+## Installation
+
+### Prerequisites (macOS)
+
+WeasyPrint requires the Pango library:
+
+```bash
+brew install pango
+```
+
+### Install from source
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+### Convert a single file
+
+```bash
+msg2pdf convert email.msg -o output/
+```
+
+### Batch convert a directory
+
+```bash
+msg2pdf batch ./emails/ -o ./pdfs/ --recursive --workers 4
+```
+
+### Inspect an MSG file
+
+```bash
+msg2pdf info email.msg
+```
+
+## CLI Reference
+
+### `msg2pdf convert`
+
+Convert a single MSG file to PDF.
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output directory (default: same as input) |
+| `--no-attachments` | Don't extract file attachments |
+| `--no-source` | Don't show source filename in PDF |
+
+### `msg2pdf batch`
+
+Batch convert MSG files in a directory.
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output` | Output directory (required) |
+| `-r, --recursive` | Search subdirectories |
+| `-w, --workers` | Number of concurrent workers (default: 4) |
+| `--no-attachments` | Don't extract file attachments |
+| `--no-source` | Don't show source filename in PDFs |
+
+### `msg2pdf info`
+
+Display information about an MSG file without converting.
+
+## Attachment Handling
+
+| Type | Action |
+|------|--------|
+| Inline images (cid:) | Embedded as base64 in PDF |
+| File attachments | Extracted to `<filename>_attachments/` folder |
+| Embedded .msg | Listed in PDF (recursive conversion planned) |
+
+## Development
+
+```bash
+# Install with dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+```
+
+## License
+
+MIT
